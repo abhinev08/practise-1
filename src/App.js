@@ -1,17 +1,39 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import Note from './components/Note'
+import Notes from './components/Notes'
 
 const App = () => {
   const [notes, setNotes] = useState([])
   const [newNote, setNewNote] = useState('')
   const [showAll, setShowAll] = useState(true)
 
-  const toggleImportanceOf = (id) => {
-    console.log('importance of ' + id + ' needs to be toggled')
+  useEffect(() => {
+    Notes
+      .getAll()
+      .then(initialNotes => {
+        setNotes(initialNotes)
+      })
+  }, [])
+
+  const toggleImportanceOf = id => {
+    const note = notes.find(n => n.id === id)
+    const changedNote = { ...note, important: !note.important }
+
+    Notes
+    .update(id, changedNote)
+    .then(returnedNote => {
+      setNotes(notes.map(note => note.id !== id ? note : returnedNote))
+    })
+    .catch(error => {
+      alert(
+        `the note '${note.content}' was already deleted from server`
+      )
+      setNotes(notes.filter(n => n.id !== id))
+    })
   }
 
-  const hook = () => {
+  /*const hook = () => {
     console.log('effect')
     axios
       .get('http://localhost:3001/notes')
@@ -19,11 +41,12 @@ const App = () => {
         console.log('promise fulfilled')
         setNotes(response.data)
       })
-  }
+     
+     }, useEffect( hook, [])
+  */
   
-  useEffect(hook, [])
 
-  console.log('render', notes.length, 'notes')
+  // console.log('render', notes.length, 'notes')
 
   const addNote = (event) => {
     event.preventDefault()
@@ -34,7 +57,12 @@ const App = () => {
     }
     // setNotes(notes.concat(noteObject))
     // setNewNote('')
-    
+    Notes
+    .create(noteObject)
+    .then(returnedNote => {
+      setNotes(notes.concat(returnedNote))
+    })
+
     axios
     .post('http://localhost:3001/notes', noteObject)
     .then(response => {
@@ -80,4 +108,5 @@ const notesToShow = showAll
   )
 }
 
-export default App;
+
+export default App
